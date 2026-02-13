@@ -1,13 +1,22 @@
 name: "CD - Déploiement sur GitHub Pages"
+
 on:
-  push:
-    branches: [ "main" ]
+  workflow_run:
+    # Doit correspondre exactement au "name:" du fichier CI
+    workflows: ["CI - Vérification HTML"]
+    types:
+      - completed
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # C'est cette ligne qui garantit que le CD ne tourne que si la CI a réussi
+    if: ${{ github.event.workflow_run.conclusion == 'success' }} 
+    
     steps:
     - name: Récupération du code
       uses: actions/checkout@v3
+      
     - name: Déploiement vers GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
