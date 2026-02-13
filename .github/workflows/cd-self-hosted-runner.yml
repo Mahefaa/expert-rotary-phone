@@ -15,27 +15,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Déploiement des fichiers (Rsync)
         run: |
-          # -a : mode archive (garde les perms, dates, etc.)
-          # -v : verbeux
-          # --delete : supprime sur le serveur les fichiers qui ne sont plus dans le git
-          # --exclude : n'envoie pas le dossier .git ni les fichiers Github
-
-          sudo rsync -av --delete --exclude '.git' --exclude '.github' ./ /var/www/app/
+          sudo cp -r . /var/www/app
       - name: Configure Nginx local
         run: |
-          # 1. Installation (si nécessaire)
           if ! command -v nginx >/dev/null 2>&1; then
             sudo apt update -y
             sudo apt install -y nginx
           fi
 
-          # 2. Préparation du dossier
-          # On utilise sudo pour créer, mais on se donne les droits ($USER) ensuite
           sudo mkdir -p /var/www/app
           sudo chown -R $USER:$USER /var/www/app
 
-          # 3. Écriture de la config
-          # 'EOF' est entre quotes pour éviter que le shell n'interprète les $uri
           sudo tee /etc/nginx/sites-available/app > /dev/null << 'EOF'
           server {
               listen 80;
@@ -48,11 +38,7 @@ jobs:
           }
           EOF
 
-          # 4. Activation et Redémarrage
           sudo ln -sf /etc/nginx/sites-available/app /etc/nginx/sites-enabled/app
-
-          # (Optionnel) Supprimer la config par défaut pour éviter les conflits
-          # sudo rm -f /etc/nginx/sites-enabled/default
 
           sudo nginx -t
           sudo systemctl restart nginx
